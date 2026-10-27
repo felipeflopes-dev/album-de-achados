@@ -4,6 +4,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera'
 import { useFocusEffect } from '@react-navigation/native'
 import { achadoRepository, InvalidAchadoError } from '../storage/AchadoRepository'
 import { useCurrentLocation } from '../hooks/useCurrentLocation'
+import { colors, radius, spacing } from '../theme'
 
 type Props = {
     // Avisa a tela que o achado foi salvo (a tela decide o que fazer depois).
@@ -101,6 +102,8 @@ export default function AchadoForm({ onSaved }: Props) {
     return (
         <View>
             {/* ---------- Campos do tema ---------- */}
+            <View style={styles.paperCard}>
+            <Text style={styles.sectionTitle}>📝 Detalhes</Text>
             <Text style={styles.label}>Nome do achado</Text>
             <TextInput
                 style={styles.input}
@@ -117,9 +120,11 @@ export default function AchadoForm({ onSaved }: Props) {
                 placeholder="Onde você achou? Como era?"
                 multiline
             />
+            </View>
 
             {/* ---------- Foto ---------- */}
-            <Text style={styles.sectionTitle}>Foto</Text>
+            <View style={styles.paperCard}>
+            <Text style={styles.sectionTitle}>📸 Foto</Text>
             {cameraOpen ? (
                 <View>
                     <CameraView
@@ -134,13 +139,13 @@ export default function AchadoForm({ onSaved }: Props) {
                     />
                     <View style={styles.row}>
                         <Pressable
-                            style={[styles.button, styles.flex, !cameraReady && styles.disabled]}
+                            style={({ pressed }) => [styles.button, styles.flex, !cameraReady && styles.disabled, pressed && cameraReady && styles.pressed]}
                             onPress={takePicture}
                             disabled={!cameraReady}
                         >
                             <Text style={styles.buttonText}>Capturar</Text>
                         </Pressable>
-                        <Pressable style={[styles.buttonOutline, styles.flex]} onPress={() => setCameraOpen(false)}>
+                        <Pressable style={({ pressed }) => [styles.buttonOutline, styles.flex, pressed && styles.pressed]} onPress={() => setCameraOpen(false)}>
                             <Text style={styles.buttonOutlineText}>Cancelar</Text>
                         </Pressable>
                     </View>
@@ -148,17 +153,18 @@ export default function AchadoForm({ onSaved }: Props) {
             ) : (
                 <View>
                     {photoUri && <Image source={{ uri: photoUri }} style={styles.preview} />}
-                    <Pressable style={styles.buttonOutline} onPress={openCamera}>
+                    <Pressable style={({ pressed }) => [styles.buttonOutline, pressed && styles.pressed]} onPress={openCamera}>
                         <Text style={styles.buttonOutlineText}>{photoUri ? 'Tirar outra foto' : 'Tirar foto'}</Text>
                     </Pressable>
                 </View>
             )}
             {cameraError && <Text style={styles.errorText}>{cameraError}</Text>}
+            </View>
 
             {/* ---------- Localização ---------- */}
             {!cameraOpen && (
-                <View>
-                    <Text style={styles.sectionTitle}>Localização</Text>
+                <View style={styles.paperCard}>
+                    <Text style={styles.sectionTitle}>📍 Local</Text>
                     {location.status === 'loading' && <Text style={styles.info}>Obtendo localização…</Text>}
                     {location.coords && (
                         <Text style={styles.info}>
@@ -166,7 +172,7 @@ export default function AchadoForm({ onSaved }: Props) {
                         </Text>
                     )}
                     <Pressable
-                        style={[styles.buttonOutline, location.status === 'loading' && styles.disabled]}
+                        style={({ pressed }) => [styles.buttonOutline, location.status === 'loading' && styles.disabled, pressed && location.status !== 'loading' && styles.pressed]}
                         onPress={location.getLocation}
                         disabled={location.status === 'loading'}
                     >
@@ -182,7 +188,7 @@ export default function AchadoForm({ onSaved }: Props) {
             {!cameraOpen && (
                 <View style={styles.saveBlock}>
                     <Pressable
-                        style={[styles.button, saving && styles.disabled]}
+                        style={({ pressed }) => [styles.button, styles.saveButton, saving && styles.disabled, pressed && !saving && styles.pressed]}
                         onPress={saveAchado}
                         disabled={saving}
                     >
@@ -197,29 +203,33 @@ export default function AchadoForm({ onSaved }: Props) {
 }
 
 const styles = StyleSheet.create({
-    label: { fontSize: 13, color: '#6B5E4B', marginBottom: 6, marginTop: 12 },
+    paperCard: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: spacing.lg, marginBottom: spacing.lg, elevation: 2, shadowColor: colors.text, shadowOpacity: 0.08, shadowRadius: 5, shadowOffset: { width: 0, height: 2 } },
+    label: { fontSize: 14, color: colors.muted, marginBottom: 6, marginTop: spacing.md },
     input: {
         borderWidth: 1,
-        borderColor: '#D9CFBC',
-        backgroundColor: '#fff',
-        borderRadius: 8,
+        borderColor: colors.border,
+        backgroundColor: colors.surface,
+        borderRadius: radius.sm,
         paddingHorizontal: 12,
         paddingVertical: 10,
         fontSize: 15,
+        color: colors.text,
     },
     inputMultiline: { minHeight: 80, textAlignVertical: 'top' },
-    sectionTitle: { fontSize: 15, fontWeight: '700', color: '#2F6F5E', marginTop: 24, marginBottom: 8 },
+    sectionTitle: { fontSize: 17, fontWeight: '700', color: colors.heading, marginBottom: spacing.md },
     camera: { width: '100%', height: 320, borderRadius: 12, overflow: 'hidden' },
-    preview: { width: '100%', height: 220, borderRadius: 12, backgroundColor: '#DDD', marginBottom: 12 },
+    preview: { width: '100%', height: 220, borderRadius: radius.md, backgroundColor: colors.border, marginBottom: spacing.md },
     row: { flexDirection: 'row', gap: 12, marginTop: 12 },
     flex: { flex: 1 },
-    button: { backgroundColor: '#2F6F5E', borderRadius: 8, paddingVertical: 14, alignItems: 'center' },
-    buttonText: { color: '#fff', fontWeight: '700', fontSize: 15 },
-    buttonOutline: { borderWidth: 1, borderColor: '#2F6F5E', borderRadius: 8, paddingVertical: 14, alignItems: 'center' },
-    buttonOutlineText: { color: '#2F6F5E', fontWeight: '700', fontSize: 15 },
+    button: { backgroundColor: colors.primary, borderRadius: radius.md, paddingVertical: spacing.lg, alignItems: 'center' },
+    buttonText: { color: colors.surface, fontWeight: '700', fontSize: 15 },
+    buttonOutline: { borderWidth: 1, borderColor: colors.primary, borderRadius: radius.md, paddingVertical: spacing.lg, alignItems: 'center' },
+    buttonOutlineText: { color: colors.primary, fontWeight: '700', fontSize: 15 },
     disabled: { opacity: 0.45 },
-    info: { color: '#333', marginBottom: 8 },
-    hint: { marginTop: 8, color: '#6B5E4B', fontSize: 13 },
-    errorText: { marginTop: 12, color: '#B00020' },
-    saveBlock: { marginTop: 32, marginBottom: 24 },
+    info: { color: colors.text, marginBottom: spacing.sm },
+    hint: { marginTop: spacing.sm, color: colors.muted, fontSize: 13 },
+    errorText: { marginTop: spacing.md, color: colors.error },
+    saveBlock: { marginTop: spacing.md, marginBottom: spacing.xl },
+    saveButton: { paddingVertical: spacing.xl },
+    pressed: { opacity: 0.82 },
 })
